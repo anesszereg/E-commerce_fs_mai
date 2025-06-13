@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ProductProvider } from './context/ProductContext';
+import { Toaster } from 'react-hot-toast';
 
 // Components
 import Navbar from './components/Navbar';
@@ -9,12 +10,15 @@ import Navbar from './components/Navbar';
 // Pages
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import AdminPage from './pages/AdminPage';
+import UserManagementPage from './pages/UserManagementPage';
+import OrderManagementPage from './pages/OrderManagementPage';
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -53,11 +57,29 @@ function App() {
         <ProductProvider>
           <CartProvider>
             <div className="min-h-screen bg-gray-50">
+              <Toaster position="top-right" toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#333',
+                  color: '#fff',
+                },
+                success: {
+                  style: {
+                    background: '#22c55e',
+                  },
+                },
+                error: {
+                  style: {
+                    background: '#ef4444',
+                  },
+                },
+              }} />
               <Navbar />
               <main>
                 <Routes>
                   <Route path="/" element={<Navigate to="/login" />} />
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<SignupPage />} />
                   <Route path="/home" element={
                     <ProtectedRoute>
                       <HomePage />
@@ -99,6 +121,22 @@ function App() {
                     element={
                       <AdminRoute>
                         <AdminPage />
+                      </AdminRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/users" 
+                    element={
+                      <AdminRoute>
+                        <UserManagementPage />
+                      </AdminRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/orders" 
+                    element={
+                      <AdminRoute>
+                        <OrderManagementPage />
                       </AdminRoute>
                     } 
                   />

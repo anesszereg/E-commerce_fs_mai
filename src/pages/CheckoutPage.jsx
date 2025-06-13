@@ -1,12 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useProducts } from '../context/ProductContext';
+import axios from 'axios';
 
 export default function CheckoutPage() {
-  const { cart, totalPrice, clearCart } = useCart();
+  const { cart, totalPrice, clearCart, loading: cartLoading, getCartWithDetails } = useCart();
   const { user } = useAuth();
+  const productsApi = useProducts();
   const navigate = useNavigate();
+  
+  const [orderProcessing, setOrderProcessing] = useState(false);
+  const [orderError, setOrderError] = useState(null);
+  const [cartWithDetails, setCartWithDetails] = useState([]);
   
   const [formData, setFormData] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -21,6 +28,18 @@ export default function CheckoutPage() {
   
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fetch full product details for cart items
+  useEffect(() => {
+    const loadCartDetails = async () => {
+      if (cart.length > 0) {
+        const detailedCart = await getCartWithDetails(productsApi);
+        setCartWithDetails(detailedCart);
+      }
+    };
+    
+    loadCartDetails();
+  }, [cart, getCartWithDetails, productsApi]);
   
   if (cart.length === 0) {
     navigate('/cart');
@@ -58,7 +77,7 @@ export default function CheckoutPage() {
     return newErrors;
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     const validationErrors = validate();
@@ -68,13 +87,57 @@ export default function CheckoutPage() {
     }
     
     setIsSubmitting(true);
+    setOrderProcessing(true);
+    setOrderError(null);
     
-    // Simulate order processing
-    setTimeout(() => {
+    try {
+      // Prepare order data
+      const orderData = {
+        orderItems: cart.map(item => ({
+          product: item._id || item.id,
+          name: item.name,
+          image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image,
+          quantity: item.quantity,
+          price: parseFloat(item.price)
+        })),
+        shippingAddress: {
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country,
+          fullName: `${formData.firstName} ${formData.lastName}`
+        },
+        paymentMethod: formData.paymentMethod,
+        itemsPrice: parseFloat(totalPrice),
+        taxPrice: 0, // Calculate tax if needed
+        shippingPrice: 0, // Free shipping for now
+        totalPrice: parseFloat(totalPrice)
+      };
+      
+      // Send order to API
+      const config = user?.token ? {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        }
+      } : {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      const { data } = await axios.post('http://localhost:8000/api/orders', orderData, config);
+      
+      // Clear cart and redirect to success page with order data
       clearCart();
-      navigate('/order-success');
+      navigate('/order-success', { state: { order: data } });
+    } catch (error) {
+      console.error('Error creating order:', error);
+      setOrderError(error.response?.data?.message || 'Failed to process your order. Please try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+      setOrderProcessing(false);
+    }
   };
 
   return (
@@ -234,10 +297,11 @@ export default function CheckoutPage() {
               
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || orderProcessing}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300"
               >
-                {isSubmitting ? 'Processing...' : 'Place Order'}
+                {orderProcessing ? 'Processing Order...' : 
+                 isSubmitting ? 'Validating...' : 'Place Order'}
               </button>
             </form>
           </div>
@@ -247,38 +311,56 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
             
+            {orderError && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                <p className="text-red-700">{orderError}</p>
+              </div>
+            )}
+            
             <div className="flow-root">
-              <ul className="-my-6 divide-y divide-gray-200">
-                {cart.map((item) => (
-                  <li key={item.id} className="py-6 flex">
-                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-cover object-center"
-                      />
-                    </div>
-                    
-                    <div className="ml-4 flex flex-1 flex-col">
-                      <div>
-                        <div className="flex justify-between text-base font-medium text-gray-900">
-                          <h3>{item.name}</h3>
-                          <p className="ml-4">${(item.price * item.quantity).toFixed(2)}</p>
+              {cartLoading ? (
+                <div className="flex justify-center py-6">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <ul className="-my-6 divide-y divide-gray-200">
+                  {(cartWithDetails.length > 0 ? cartWithDetails : cart).map((item) => (
+                    <li key={item._id || item.id} className="py-6 flex">
+                      <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                        <img
+                          src={Array.isArray(item.images) && item.images.length > 0
+                            ? `http://localhost:8000/${item.images[0]}`
+                            : item.image ? `http://localhost:8000/${item.image}` : 'https://via.placeholder.com/150'}
+                          alt={item.name}
+                          className="h-full w-full object-cover object-center"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/150';
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="ml-4 flex flex-1 flex-col">
+                        <div>
+                          <div className="flex justify-between text-base font-medium text-gray-900">
+                            <h3>{item.name}</h3>
+                            <p className="ml-4">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-1 items-end justify-between text-sm">
+                          <p className="text-gray-500">Qty {item.quantity}</p>
                         </div>
                       </div>
-                      <div className="flex flex-1 items-end justify-between text-sm">
-                        <p className="text-gray-500">Qty {item.quantity}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             
             <div className="border-t border-gray-200 pt-4 mt-6">
               <div className="flex justify-between text-base font-medium text-gray-900 mb-2">
                 <p>Subtotal</p>
-                <p>${totalPrice.toFixed(2)}</p>
+                <p>${parseFloat(totalPrice).toFixed(2)}</p>
               </div>
               <div className="flex justify-between text-base font-medium text-gray-900 mb-2">
                 <p>Shipping</p>
@@ -286,7 +368,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-base font-medium text-gray-900 mb-4">
                 <p>Total</p>
-                <p>${totalPrice.toFixed(2)}</p>
+                <p>${parseFloat(totalPrice).toFixed(2)}</p>
               </div>
             </div>
           </div>

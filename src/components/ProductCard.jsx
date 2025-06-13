@@ -3,12 +3,14 @@ import { useCart } from '../context/CartContext';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
+
+  console.log(product);
   
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <Link to={`/products/${product.id}`}>
         <img 
-          src={product.image} 
+          src={`http://localhost:8000/${product.images[0]}`} 
           alt={product.name} 
           className="w-full h-48 object-cover"
         />

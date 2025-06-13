@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,10 +6,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/products');
+      }
+    }
+  }, [user, navigate]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
@@ -20,24 +32,17 @@ export default function LoginPage() {
     }
     
     try {
-      // In a real app, this would validate with an API
-      // For demo purposes, we'll accept any email/password combination
-      // Admin login: admin@example.com with any password
-      const userData = {
-        email,
-        name: email.split('@')[0]
-      };
+      setLoading(true);
       
-      login(userData);
+      // Call the login function from AuthContext with separate parameters
+      const response = await login(email, password); // Fixed: passing email and password as separate parameters
+      console.log(response);
       
-      // Redirect based on role
-      if (email === 'admin@example.com') {
-        navigate('/admin');
-      } else {
-        navigate('/products');
-      }
+      // Navigation is handled in the useEffect when user state changes
+      
     } catch (err) {
-      setError('Invalid credentials');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setLoading(false);
     }
   };
 
@@ -95,20 +100,18 @@ export default function LoginPage() {
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
             >
-              Sign in
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
           
-          <div className="text-sm text-center">
+          <div className="text-sm text-center mt-4">
             <p className="text-gray-600">
-              For admin access use: admin@example.com
-            </p>
-            <p className="text-gray-600">
-              For regular user: any other email
-            </p>
-            <p className="text-gray-600">
-              (Any password will work for this demo)
+              Don't have an account?{' '}
+              <Link to="/register" className="text-blue-600 hover:text-blue-800">
+                Sign up
+              </Link>
             </p>
           </div>
         </form>
