@@ -1,12 +1,79 @@
-# React + Vite
+# 🛍️ E-Commerce Frontend | React + Vite ⚡ | Tailwind CSS 🎨
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern shopping experience with user authentication 🔐, product browsing 🔍, and cart functionality 🛒. Built with React 19, React Router, and styled with Tailwind CSS for a responsive and beautiful UI.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **User Authentication** 🔐: Secure login and registration system
+- **Product Browsing** 🔍: Browse and search through available products
+- **Shopping Cart** 🛒: Add, remove, and update items in your cart
+- **Responsive Design** 📱: Works seamlessly on desktop and mobile devices
+- **Context API** 🔄: State management using React Context
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **React 19** ⚛️: Latest version of React for building the UI
+- **Vite** ⚡: Next-generation frontend tooling
+- **React Router** 🧭: For navigation between pages
+- **Tailwind CSS** 🎨: For styling and responsive design
+- **Axios** 📡: For API requests
+- **Headless UI** 🧩: For accessible UI components
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone <repository-url>
+   cd frontend
+   ```
+
+2. Install dependencies
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
+
+3. Start the development server
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+4. Open your browser and navigate to `http://localhost:5173`
+
+## 📦 Build for Production
+
+```bash
+npm run build
+# or
+yarn build
+```
+
+## 🧪 Linting
+
+```bash
+npm run lint
+# or
+yarn lint
+```
+
+## 📝 Project Structure
+
+- `/src`: Source code
+  - `/components`: Reusable UI components
+  - `/context`: React Context providers
+  - `/pages`: Application pages
+  - `/assets`: Static assets like images
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
